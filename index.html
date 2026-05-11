@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Finance Bot</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#111827">
+    <link rel="manifest" href="manifest.json">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { --sat: env(safe-area-inset-top); --sab: env(safe-area-inset-bottom); }
+        
+        body { 
+            touch-action: pan-x pan-y; 
+            overscroll-behavior-y: contain; /* Prevents pull-to-refresh */
+        }
+
+        .chat-container { 
+            height: calc(100vh - 180px - var(--sat) - var(--sab)); 
+            padding-bottom: 20px;
+        }
+
+        /* Mobile Keyboard Fix: Prevents layout jumping */
+        .message-bubble { 
+            width: fit-content; 
+            max-width: 88%; 
+            word-wrap: break-word; 
+            line-height: 1.5;
+        }
+
+        .ref-id-span { 
+            display: inline-block; 
+            white-space: nowrap; 
+            font-family: 'Courier New', Courier, monospace;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Prevents iOS zooming on input focus */
+        input { font-size: 16px !important; }
+
+        .clear-btn { font-size: 0.7rem; color: #94a3b8; border: 1px solid #334155; padding: 4px 10px; border-radius: 6px; }
+        
+        /* Smooth fade for processing message */
+        .loading { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 flex flex-col h-screen overflow-hidden">
+
+    <!-- Header (Safe Area Aware) -->
+    <div class="pt-[env(safe-area-inset-top)] bg-gray-900 border-b border-gray-800 shrink-0">
+        <div class="p-4 flex justify-between items-center">
+            <h1 class="text-blue-400 font-bold tracking-tight text-lg">FINANCE_BOT</h1>
+            <button onclick="clearHistory()" class="clear-btn active:bg-red-900/40">CLEAR</button>
+        </div>
+    </div>
+
+    <!-- Chat Box -->
+    <div id="chatBox" class="chat-container overflow-y-auto p-4 space-y-4 flex-grow">
+        <!-- Initial Message -->
+        <div class="flex justify-start">
+            <div class="message-bubble bg-gray-800 p-3 rounded-2xl rounded-tl-none text-sm shadow-md border border-gray-700/50">
+                System Online. Select a command.
+            </div>
+        </div>
+    </div>
+
+    <!-- Input Section (Slide Up) -->
+    <div id="inputSection" class="hidden p-3 bg-gray-900 border-t border-gray-800 pb-[calc(12px+env(safe-area-inset-bottom))] shrink-0">
+        <div class="flex gap-2">
+            <input id="userInput" type="text" autocomplete="off"
+                   class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 shadow-inner">
+            <button onclick="submitInput()" class="bg-blue-600 px-6 rounded-xl font-bold text-sm active:scale-95 transition-transform">SEND</button>
+            <button onclick="cancelInput()" class="bg-gray-700 px-4 rounded-xl text-sm">❌</button>
+        </div>
+    </div>
+
+    <!-- Mobile Button Grid -->
+    <div id="buttonGrid" class="p-3 bg-gray-900 grid grid-cols-4 gap-2 border-t border-gray-800 pb-[calc(12px+env(safe-area-inset-bottom))] shrink-0">
+        <button onclick="prepareInput('fetch')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black active:bg-gray-700 transition-colors">🔍 FETCH</button>
+        <button onclick="prepareInput('delete')" class="bg-red-900/10 text-red-400 border border-red-900/20 py-4 rounded-xl text-[10px] font-black active:bg-red-900/30">🗑️ DEL</button>
+        <button onclick="handleAction('savings')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black">📊 SAVINGS</button>
+        <button onclick="handleAction('cash')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black">💵 CASH</button>
+        <button onclick="handleAction('credit')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black">💳 CREDIT</button>
+        <button onclick="handleAction('loan')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black">💰 LOAN</button>
+        <button onclick="handleAction('help')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black col-span-2">❓ HELP / GUIDE</button>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz5jwjriTJB2rqI7G66VmtdLTBGR0tQ4j_2iRKDubEERdR-pHI-Sg5OiORQxqgXsg_G/exec";
+        let currentAction = null;
+
+        // Auto-scroll and Load
+        window.onload = () => {
+            const history = localStorage.getItem('chat_history');
+            if (history) {
+                document.getElementById('chatBox').innerHTML = history;
+                setTimeout(scrollToBottom, 100);
+            }
+        };
+
+        function scrollToBottom() {
+            const box = document.getElementById('chatBox');
+            box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
+        }
+
+        function saveHistory() {
+            localStorage.setItem('chat_history', document.getElementById('chatBox').innerHTML);
+        }
+
+        function clearHistory() {
+            if (confirm("Clear all history?")) {
+                localStorage.removeItem('chat_history');
+                location.reload();
+            }
+        }
+
+        function addMessage(text, isUser = false, isLoading = false) {
+            const chatBox = document.getElementById('chatBox');
+            const wrapper = document.createElement('div');
+            wrapper.className = isUser ? "flex justify-end w-full" : "flex justify-start w-full";
+            if(isLoading) wrapper.id = "loading-bubble";
+            
+            const msg = document.createElement('div');
+            msg.className = isUser 
+                ? "message-bubble bg-blue-600 p-3 rounded-2xl rounded-tr-none text-[13px] font-mono mb-1 shadow-lg" 
+                : "message-bubble bg-gray-800 p-3 rounded-2xl rounded-tl-none text-[13px] font-mono mb-1 shadow-lg border border-gray-700/50";
+            
+            let html = text.replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                .replace(/────────────────────/g, '<hr class="border-gray-700 my-2">');
+
+            html = html.replace(/`(REF-.*?)`/g, (m, id) => {
+                return `<span onclick="copyToClipboard('${id}', this)" class="ref-id-span bg-black text-blue-400 px-2 py-1 rounded border border-blue-900/50 mx-1 active:bg-blue-900/20">${id}</span>`;
+            });
+
+            msg.innerHTML = html;
+            wrapper.appendChild(msg);
+            chatBox.appendChild(wrapper);
+            scrollToBottom();
+            if(!isLoading) saveHistory();
+        }
+
+        async function copyToClipboard(text, el) {
+            try {
+                await navigator.clipboard.writeText(text);
+                const old = el.innerText;
+                el.innerText = "COPIED!";
+                el.style.color = "#4ade80";
+                setTimeout(() => { el.innerText = old; el.style.color = ""; }, 800);
+            } catch (e) { alert("Copy failed"); }
+        }
+
+        function prepareInput(action) {
+            currentAction = action;
+            document.getElementById('buttonGrid').classList.add('hidden');
+            document.getElementById('inputSection').classList.remove('hidden');
+            document.getElementById('userInput').placeholder = action === 'fetch' ? "Date or ID..." : "Ref ID to delete...";
+            document.getElementById('userInput').focus();
+        }
+
+        function cancelInput() {
+            currentAction = null;
+            document.getElementById('buttonGrid').classList.remove('hidden');
+            document.getElementById('inputSection').classList.add('hidden');
+        }
+
+        async function submitInput() {
+            let val = document.getElementById('userInput').value.trim();
+            if (!val) return;
+            
+            if (currentAction === 'fetch' && val.includes('-')) {
+                const p = val.split('-');
+                if (p.length === 3) val = p[0].padStart(2,'0')+'-'+p[1].padStart(2,'0')+'-'+p[2];
+            }
+
+            const act = currentAction;
+            addMessage(val, true);
+            cancelInput();
+            document.getElementById('userInput').value = "";
+            performFetch(act, val);
+        }
+
+        async function handleAction(action) {
+            addMessage(action.toUpperCase(), true);
+            performFetch(action);
+        }
+
+        async function performFetch(action, value = "") {
+            addMessage("⏳ Processing Request...", false, true);
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=${action}&value=${encodeURIComponent(value)}`);
+                const data = await res.json();
+                const load = document.getElementById('loading-bubble');
+                if(load) load.remove();
+                addMessage(data.result);
+            } catch (e) { 
+                const load = document.getElementById('loading-bubble');
+                if(load) load.remove();
+                addMessage("❌ Connection Error."); 
+            }
+        }
+    </script>
+</body>
+</html>
