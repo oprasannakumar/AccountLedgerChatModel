@@ -28,7 +28,7 @@
         /* Mobile Keyboard Fix: Prevents layout jumping */
         .message-bubble { 
             width: fit-content; 
-            max-width: 70%; 
+            max-width: 88%; 
             word-wrap: break-word; 
             line-height: 1.5;
         }
@@ -71,14 +71,15 @@
     </div>
 
     <!-- Input Section (Slide Up) -->
-    <div id="inputSection" class="hidden p-3 bg-gray-900 border-t border-gray-800 pb-[calc(12px+env(safe-area-inset-bottom))] shrink-0">
-        <div class="flex gap-2">
-            <input id="userInput" type="text" autocomplete="off"
-                   class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 shadow-inner">
-            <button onclick="submitInput()" class="bg-blue-600 px-6 rounded-xl font-bold text-sm active:scale-95 transition-transform">SEND</button>
-            <button onclick="cancelInput()" class="bg-gray-700 px-4 rounded-xl text-sm">❌</button>
-        </div>
+    <div id="inputSection" class="hidden p-3 bg-gray-900 border-t border-gray-800 shrink-0">
+    <!-- This inner div controls the width and centering -->
+    <div class="flex gap-2 max-w-[300px] mx-auto"> 
+        <input id="userInput" type="text" autocomplete="off"
+               class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 shadow-inner min-w-0">
+        <button onclick="submitInput()" class="bg-blue-600 px-6 rounded-xl font-bold text-sm active:scale-95 transition-transform">SEND</button>
+        <button onclick="cancelInput()" class="bg-gray-700 px-4 rounded-xl text-sm">❌</button>
     </div>
+</div>
 
     <!-- Mobile Button Grid -->
     <div id="buttonGrid" class="p-3 bg-gray-900 grid grid-cols-4 gap-2 border-t border-gray-800 pb-[calc(12px+env(safe-area-inset-bottom))] shrink-0">
