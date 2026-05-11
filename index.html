@@ -15,20 +15,33 @@
     <style>
         :root { --sat: env(safe-area-inset-top); --sab: env(safe-area-inset-bottom); }
         
-        body { 
-            touch-action: pan-x pan-y; 
-            overscroll-behavior-y: contain; /* Prevents pull-to-refresh */
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #030712; /* gray-950 */
+        }
+
+        #mainWrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            width: 100%;
         }
 
         .chat-container { 
-            height: calc(100vh - 180px - var(--sat) - var(--sab)); 
+            flex: 1 1 auto;
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch;
             padding-bottom: 20px;
+            touch-action: pan-x pan-y;
         }
 
-        /* Mobile Keyboard Fix: Prevents layout jumping */
         .message-bubble { 
             width: fit-content; 
-            max-width: 95%; /* Increased from 85% to 95% */
+            max-width: 95%; 
             word-wrap: break-word; 
             line-height: 1.5;
         }
@@ -43,72 +56,80 @@
         /* Prevents iOS zooming on input focus */
         input { font-size: 16px !important; }
 
-        .clear-btn { font-size: 0.7rem; color: #94a3b8; border: 1px solid #334155; padding: 4px 10px; border-radius: 6px; }
+        .clear-btn { font-size: 0.7rem; color: #94a3b8; border: 1px solid #334155; padding: 4px 10px; border-radius: 6px; transition: all 0.2s; }
+        .clear-btn:active { background: #7f1d1d; color: white; border-color: #ef4444; }
         
-        /* Smooth fade for processing message */
-        .loading { animation: pulse 1.5s infinite; }
+        .loading-bubble { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     </style>
 </head>
-<body class="bg-gray-950 text-gray-100 flex flex-col h-screen overflow-hidden">
+<body class="text-gray-100">
 
-    <!-- Header (Safe Area Aware) -->
-    <div class="pt-[env(safe-area-inset-top)] bg-gray-900 border-b border-gray-800 shrink-0">
-        <div class="p-4 flex justify-between items-center">
-            <h1 class="text-blue-400 font-bold tracking-tight text-lg">FINANCE_BOT</h1>
-            <button onclick="clearHistory()" class="clear-btn active:bg-red-900/40">CLEAR</button>
-        </div>
-    </div>
-
-    <!-- Chat Box -->
-    <div id="chatBox" class="chat-container overflow-y-auto p-4 space-y-4 flex-grow">
-        <!-- Initial Message -->
-       <div class="flex flex-col h-screen w-full">
-            <div class="message-bubble bg-gray-800 p-3 rounded-2xl rounded-tl-none text-sm shadow-md border border-gray-700/50">
-                System Online. Select a command.
+    <div id="mainWrapper">
+        <!-- Header -->
+        <div class="pt-[env(safe-area-inset-top)] bg-gray-900 border-b border-gray-800 shrink-0 shadow-md">
+            <div class="p-4 flex justify-between items-center">
+                <h1 class="text-blue-400 font-bold tracking-tight text-lg">FINANCE_BOT</h1>
+                <button onclick="clearHistory()" class="clear-btn">CLEAR</button>
             </div>
         </div>
-    </div>
 
-    <div id="inputSection" class="hidden w-full bg-gray-900 border-t border-gray-800 shrink-0">
-    <!-- Removed mx-auto and max-w, set width to full -->
-    <div class="flex gap-2 w-full p-3 pb-[calc(12px+env(safe-area-inset-bottom))]"> 
-        <input id="userInput" type="text" autocomplete="off"
-               class="flex-grow bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 shadow-inner min-w-0">
-        <button onclick="submitInput()" class="bg-blue-600 px-6 rounded-xl font-bold text-sm active:scale-95 shrink-0">SEND</button>
-        <button onclick="cancelInput()" class="bg-gray-700 px-4 rounded-xl text-sm shrink-0">❌</button>
-    </div>
-</div>
+        <!-- Chat Box -->
+        <div id="chatBox" class="chat-container p-4 space-y-4">
+            <!-- Content injected by JS -->
+        </div>
 
-    <!-- Mobile Button Grid -->
-    <div id="buttonGrid" class="w-full bg-gray-900 grid grid-cols-4 gap-2 border-t border-gray-800 p-3 pb-[calc(12px+env(safe-area-inset-bottom))] shrink-0">
-        <button onclick="prepareInput('fetch')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black active:bg-gray-700 transition-colors">🔍 FETCH</button>
-        <button onclick="prepareInput('delete')" class="bg-red-900/10 text-red-400 border border-red-900/20 py-4 rounded-xl text-[10px] font-black active:bg-red-900/30">🗑️ DEL</button>
-        <button onclick="handleAction('savings')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black">📊 SAVINGS</button>
-        <button onclick="handleAction('cash')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black">💵 CASH</button>
-        <button onclick="handleAction('credit')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black">💳 CREDIT</button>
-        <button onclick="handleAction('loan')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black">💰 LOAN</button>
-        <button onclick="handleAction('help')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black col-span-2">❓ HELP / GUIDE</button>
+        <!-- Input Section -->
+        <div id="inputSection" class="hidden w-full bg-gray-900 border-t border-gray-800 shrink-0">
+            <div class="flex gap-2 w-full p-3 pb-[calc(12px+env(safe-area-inset-bottom))]"> 
+                <input id="userInput" type="text" autocomplete="off" placeholder="Enter details..."
+                       class="flex-grow bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 shadow-inner min-w-0">
+                <button onclick="submitInput()" class="bg-blue-600 px-6 rounded-xl font-bold text-sm active:scale-95 shrink-0 transition-transform">SEND</button>
+                <button onclick="cancelInput()" class="bg-gray-700 px-4 rounded-xl text-sm shrink-0">❌</button>
+            </div>
+        </div>
+
+        <!-- Mobile Button Grid -->
+        <div id="buttonGrid" class="w-full bg-gray-900 grid grid-cols-4 gap-2 border-t border-gray-800 p-3 pb-[calc(12px+env(safe-area-inset-bottom))] shrink-0">
+            <button onclick="prepareInput('fetch')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black active:bg-gray-700 transition-colors">🔍 FETCH</button>
+            <button onclick="prepareInput('delete')" class="bg-red-900/10 text-red-400 border border-red-900/20 py-4 rounded-xl text-[10px] font-black active:bg-red-900/30">🗑️ DEL</button>
+            <button onclick="handleAction('savings')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black">📊 SAVINGS</button>
+            <button onclick="handleAction('cash')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black">💵 CASH</button>
+            <button onclick="handleAction('credit')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black">💳 CREDIT</button>
+            <button onclick="handleAction('loan')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black">💰 LOAN</button>
+            <button onclick="handleAction('help')" class="bg-gray-800 py-4 rounded-xl text-[10px] font-black col-span-2">❓ HELP / GUIDE</button>
+        </div>
     </div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz5jwjriTJB2rqI7G66VmtdLTBGR0tQ4j_2iRKDubEERdR-pHI-Sg5OiORQxqgXsg_G/exec";
         let currentAction = null;
-        if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW Registered'))
-            .catch(err => console.log('SW Registration Failed', err));
-    });
-}
 
-        // Auto-scroll and Load
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered'))
+                    .catch(err => console.error('SW Registration Failed', err));
+            });
+        }
+
+        // Load History or Default Message
         window.onload = () => {
             const history = localStorage.getItem('chat_history');
-            if (history) {
-                document.getElementById('chatBox').innerHTML = history;
-                setTimeout(scrollToBottom, 100);
+            const chatBox = document.getElementById('chatBox');
+            
+            if (history && history.trim().length > 50) { // Check for meaningful content
+                chatBox.innerHTML = history;
+            } else {
+                chatBox.innerHTML = `
+                    <div class="flex justify-start w-full">
+                        <div class="message-bubble bg-gray-800 p-3 rounded-2xl rounded-tl-none text-[13px] font-mono mb-1 shadow-lg border border-gray-700/50">
+                            System Online. Select a command.
+                        </div>
+                    </div>`;
             }
+            setTimeout(scrollToBottom, 150);
         };
 
         function scrollToBottom() {
@@ -123,7 +144,15 @@
         function clearHistory() {
             if (confirm("Clear all history?")) {
                 localStorage.removeItem('chat_history');
-                location.reload();
+                const chatBox = document.getElementById('chatBox');
+                chatBox.innerHTML = `
+                    <div class="flex justify-start w-full">
+                        <div class="message-bubble bg-gray-800 p-3 rounded-2xl rounded-tl-none text-[13px] font-mono mb-1 shadow-lg border border-gray-700/50">
+                            History cleared.
+                        </div>
+                    </div>`;
+                saveHistory();
+                cancelInput();
             }
         }
 
@@ -135,15 +164,15 @@
             
             const msg = document.createElement('div');
             msg.className = isUser 
-                ? "message-bubble bg-blue-600 p-3 rounded-2xl rounded-tr-none text-[13px] font-mono mb-1 shadow-lg" 
-                : "message-bubble bg-gray-800 p-3 rounded-2xl rounded-tl-none text-[13px] font-mono mb-1 shadow-lg border border-gray-700/50";
+                ? "message-bubble bg-blue-700 p-3 rounded-2xl rounded-tr-none text-[13px] font-mono mb-1 shadow-lg" 
+                : "message-bubble bg-gray-800 p-3 rounded-2xl rounded-tl-none text-[13px] font-mono mb-1 shadow-lg border border-gray-700/50" + (isLoading ? " loading-bubble" : "");
             
             let html = text.replace(/\n/g, '<br>')
                 .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
                 .replace(/────────────────────/g, '<hr class="border-gray-700 my-2">');
 
             html = html.replace(/`(REF-.*?)`/g, (m, id) => {
-                return `<span onclick="copyToClipboard('${id}', this)" class="ref-id-span bg-black text-blue-400 px-2 py-1 rounded border border-blue-900/50 mx-1 active:bg-blue-900/20">${id}</span>`;
+                return `<span onclick="copyToClipboard('${id}', this)" class="ref-id-span bg-black text-blue-400 px-2 py-1 rounded border border-blue-900/50 mx-1 active:bg-blue-900/20 shadow-sm">${id}</span>`;
             });
 
             msg.innerHTML = html;
@@ -160,14 +189,14 @@
                 el.innerText = "COPIED!";
                 el.style.color = "#4ade80";
                 setTimeout(() => { el.innerText = old; el.style.color = ""; }, 800);
-            } catch (e) { alert("Copy failed"); }
+            } catch (e) { console.error("Copy failed"); }
         }
 
         function prepareInput(action) {
             currentAction = action;
             document.getElementById('buttonGrid').classList.add('hidden');
             document.getElementById('inputSection').classList.remove('hidden');
-            document.getElementById('userInput').placeholder = action === 'fetch' ? "Date or ID..." : "Ref ID to delete...";
+            document.getElementById('userInput').placeholder = action === 'fetch' ? "Date (1-5-2026) or ID..." : "Ref ID to delete...";
             document.getElementById('userInput').focus();
         }
 
@@ -175,6 +204,7 @@
             currentAction = null;
             document.getElementById('buttonGrid').classList.remove('hidden');
             document.getElementById('inputSection').classList.add('hidden');
+            document.getElementById('userInput').value = "";
         }
 
         async function submitInput() {
@@ -189,7 +219,6 @@
             const act = currentAction;
             addMessage(val, true);
             cancelInput();
-            document.getElementById('userInput').value = "";
             performFetch(act, val);
         }
 
@@ -209,7 +238,7 @@
             } catch (e) { 
                 const load = document.getElementById('loading-bubble');
                 if(load) load.remove();
-                addMessage("❌ Connection Error."); 
+                addMessage("❌ Connection Error. Ensure Web App is deployed with 'Anyone' access."); 
             }
         }
     </script>
