@@ -1,0 +1,16 @@
+{
+  "short_name": "FinanceBot",
+  "name": "Personal Finance Ledger",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/552/552791.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#111827",
+  "background_color": "#111827"
+}
