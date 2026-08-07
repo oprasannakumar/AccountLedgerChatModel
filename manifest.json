@@ -15,6 +15,32 @@
   "background_color": "#111827",
   "shortcuts": [
     {
+      "name": "Fetch Entry",
+      "short_name": "Fetch",
+      "description": "Fetch transaction details by date or ID",
+      "url": "./index.html?action=fetch",
+      "icons": [
+        {
+          "src": "icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Delete Entry",
+      "short_name": "Delete",
+      "description": "Delete transaction by Ref ID",
+      "url": "./index.html?action=delete",
+      "icons": [
+        {
+          "src": "icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
       "name": "Savings",
       "short_name": "Savings",
       "description": "View savings account summary",
