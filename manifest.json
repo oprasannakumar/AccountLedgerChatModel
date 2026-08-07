@@ -12,5 +12,46 @@
   "start_url": "./index.html",
   "display": "standalone",
   "theme_color": "#111827",
-  "background_color": "#111827"
+  "background_color": "#111827",
+  "shortcuts": [
+    {
+      "name": "Savings",
+      "short_name": "Savings",
+      "description": "View savings account summary",
+      "url": "./index.html?action=savings",
+      "icons": [
+        {
+          "src": "icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Credit",
+      "short_name": "Credit",
+      "description": "View credit card summary",
+      "url": "./index.html?action=credit",
+      "icons": [
+        {
+          "src": "icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Loan",
+      "short_name": "Loan",
+      "description": "View loan details",
+      "url": "./index.html?action=loan",
+      "icons": [
+        {
+          "src": "icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
 }
