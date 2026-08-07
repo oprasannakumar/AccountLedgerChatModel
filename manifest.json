@@ -28,6 +28,19 @@
       ]
     },
     {
+      "name": "Cash",
+      "short_name": "Cash",
+      "description": "View cash transactions and balance",
+      "url": "./index.html?action=cash",
+      "icons": [
+        {
+          "src": "icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
       "name": "Credit",
       "short_name": "Credit",
       "description": "View credit card summary",
