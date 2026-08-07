@@ -115,22 +115,33 @@
         }
 
         // Load History or Default Message
-        window.onload = () => {
-            const history = localStorage.getItem('chat_history');
-            const chatBox = document.getElementById('chatBox');
-            
-            if (history && history.trim().length > 50) { // Check for meaningful content
-                chatBox.innerHTML = history;
-            } else {
-                chatBox.innerHTML = `
-                    <div class="flex justify-start w-full">
-                        <div class="message-bubble bg-gray-800 p-3 rounded-2xl rounded-tl-none text-[13px] font-mono mb-1 shadow-lg border border-gray-700/50">
-                            System Online. Select a command.
-                        </div>
-                    </div>`;
-            }
-            setTimeout(scrollToBottom, 150);
-        };
+window.onload = () => {
+    const history = localStorage.getItem('chat_history');
+    const chatBox = document.getElementById('chatBox');
+    
+    if (history && history.trim().length > 50) {
+        chatBox.innerHTML = history;
+    } else {
+        chatBox.innerHTML = `
+            <div class="flex justify-start w-full">
+                <div class="message-bubble bg-gray-800 p-3 rounded-2xl rounded-tl-none text-[13px] font-mono mb-1 shadow-lg border border-gray-700/50">
+                    System Online. Select a command.
+                </div>
+            </div>`;
+    }
+
+    // Check for shortcut query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const actionParam = urlParams.get('action');
+    if (actionParam && ['savings', 'credit', 'loan', 'cash'].includes(actionParam)) {
+        handleAction(actionParam);
+        // Clean URL parameter so refreshing doesn't re-trigger
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    setTimeout(scrollToBottom, 150);
+};
+
 
         function scrollToBottom() {
             const box = document.getElementById('chatBox');
